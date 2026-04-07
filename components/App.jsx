@@ -2,15 +2,17 @@ import Heading from './Heading';
 import { Outlet } from 'react-router-dom';
 
 const App = () => {
-    return (
-        <>
-            <Heading />
+  return (
+    <>
+      <Heading />
 
-            <main>
-                <Outlet />
-            </main>
-        </>
-    );
+      <main>
+        <article>
+          <Outlet />
+        </article>
+      </main>
+    </>
+  );
 };
 
 export default App;

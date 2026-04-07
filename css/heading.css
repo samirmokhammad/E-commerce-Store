@@ -1,9 +1,14 @@
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: min(100% - 3rem, 90rem);
+  margin-inline: auto;
+  padding-block: 20px;
 }
 
 .links a {
-    margin-inline-start: 20px;
+  margin-inline-start: 20px;
+  font-weight: 600;
 }
