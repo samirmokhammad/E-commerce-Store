@@ -2,11 +2,16 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import App from './components/App';
+import SignUp from './components/SignUp';
+import LogIn from './components/LogIn';
 
 createRoot(document.getElementById('root')).render(
-    <BrowserRouter>
-        <Routes>
-            <Route path="/" element={<App />}></Route>
-        </Routes>
-    </BrowserRouter>,
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<App />}>
+        <Route path="signup" element={<SignUp />} />
+        <Route path="login" element={<LogIn />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>,
 );

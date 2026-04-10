@@ -23,12 +23,10 @@ function normalizeBaseUrl(rawValue, fallbackValue) {
 
 const frontendUrl = normalizeBaseUrl(
   process.env.VITE_FRONTEND_URL,
-  // 'https://event-calendar-test-eight.vercel.app',
   'http://localhost:5173',
 );
 const backendUrl = normalizeBaseUrl(
   process.env.VITE_BACKEND_URL,
-  // 'https://eventcalendartest.onrender.com',
   'http://localhost:5432',
 );
 
@@ -87,6 +85,48 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
     }
 
     res.json(response.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post('/api/signup', async (req, res) => {
+  const { username, password, email } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  try {
+    const existingUser = await pool.query(
+      'SELECT id FROM customer WHERE email = $1',
+      [email],
+    );
+    if (existingUser.rowCount > 0) {
+      return res.status(409).json({ message: 'Email already in use' });
+    }
+
+    const existingUsername = await pool.query(
+      'SELECT id FROM customer WHERE username = $1',
+      [username],
+    );
+    if (existingUsername.rowCount > 0) {
+      return res.status(409).json({ message: 'Username already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const response = await pool.query(
+      'INSERT INTO customer (username, password, email) VALUES ($1, $2, $3) RETURNING id',
+      [username, hashedPassword, email],
+    );
+
+    req.login(response.rows[0], (err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Login after signup failed' });
+      }
+
+      return res.status(201).json({ message: 'User created successfully' });
+    });
   } catch (err) {
     res.status(500).json({ message: 'Internal server error' });
   }

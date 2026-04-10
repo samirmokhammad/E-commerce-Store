@@ -7,9 +7,7 @@ const App = () => {
       <Heading />
 
       <main>
-        <article>
-          <Outlet />
-        </article>
+        <Outlet />
       </main>
     </>
   );

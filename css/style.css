@@ -3,9 +3,60 @@
   font-family: 'Noto Sans', sans-serif;
 }
 
+:root {
+  --background-color: #f8fafc;
+
+  --text-color: #111827;
+
+  --button-bg-color: #1d4ed8;
+  --button-text-color: #fff;
+
+  --button-bg-color-hover: #1e40af;
+  --button-text-color-hover: #fff;
+  --button-bg-color-active: #1e3a8a;
+  --button-text-color-active: #fff;
+
+  --input-bg-color: #fff;
+  --input-text-color: #111827;
+  --input-border-color: #e5e7eb;
+
+  --input-border-color-focus: #1d4ed8;
+}
+
+html {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+button {
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+}
+
+button:hover {
+  background-color: var(--button-bg-color-hover);
+  color: var(--button-text-color-hover);
+}
+
+button:active {
+  background-color: var(--button-bg-color-active);
+  color: var(--button-text-color-active);
+}
+
+input {
+  background-color: var(--input-bg-color);
+  color: var(--input-text-color);
+  border: 1px solid var(--input-border-color);
+}
+
+input:focus {
+  border-color: var(--input-border-color-focus);
+  outline: none;
+}
+
 a {
   text-decoration: none;
-  color: black;
+  color: var(--text-color);
 }
 
 body {
@@ -38,7 +89,26 @@ p {
   padding: 0;
 }
 
-article {
-  width: min(100% - 3rem, 75rem);
+main {
+  width: min(100% - 3rem, 90rem);
   margin-inline: auto;
+}
+
+.highlighted-link {
+  color: var(--button-bg-color);
+}
+
+.password-label-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+  gap: 10px;
+}
+
+.password-helper-icon {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  margin-block-end: 10px;
 }
