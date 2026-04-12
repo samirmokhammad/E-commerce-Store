@@ -4,8 +4,7 @@ import { validatePassword } from '../fn';
 import '../css/login.css';
 
 export default function LogIn() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [warningText, setWarningText] = useState('');
@@ -14,6 +13,26 @@ export default function LogIn() {
   useEffect(() => {
     validatePassword(password, setWarningText, setIsPasswordValid);
   }, [password]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/`,
+          {
+            credentials: 'include',
+          },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.id) navigate('/store');
+      } catch (err) {
+        // console.log(err);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const handleLogIn = async (e) => {
     e.preventDefault();
@@ -28,17 +47,20 @@ export default function LogIn() {
         `${import.meta.env.VITE_BACKEND_URL}/api/login`,
         {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, email, password }),
+          body: JSON.stringify({ login, password }),
         },
       );
       if (!response.ok) {
+        const data = await response.json();
         setWarningText(data?.message || 'Server error');
+        console.log('Login failed:', data?.message || 'Unknown error');
         return;
       }
-      navigate(`/shop`);
+      navigate(`/store`);
     } catch (error) {
       // console.log(error);
     }
@@ -48,30 +70,25 @@ export default function LogIn() {
     <div className="login">
       <h1 className="visually-hidden">Log In Page</h1>
       <div className="login-block">
-        <h2>Log In</h2>
+        <h2 className="acc-h2">Log In</h2>
         <form onSubmit={handleLogIn}>
-          <label htmlFor="username">Username</label>
+          <label htmlFor="" className="acc-label">
+            Username or Email
+          </label>
           <input
             type="text"
-            id="username"
-            name="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="login"
+            name=""
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
             autoComplete="on"
             required={true}
-          />
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            autoComplete="on"
-            onChange={(e) => setEmail(e.target.value)}
-            required={true}
+            className="acc-input"
           />
           <div className="password-label-block">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" className="acc-label">
+              Password
+            </label>
             <img
               src="../img/question.png"
               alt="password help"
@@ -90,11 +107,14 @@ export default function LogIn() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required={true}
+            className="acc-input"
           />
-          <button type="submit">Log In</button>
+          <button type="submit" className="acc-button">
+            Log In
+          </button>
           <p className="warning-text">{warningText}</p>
         </form>
-        <p>
+        <p className="redirect-text">
           Want to create an account?{' '}
           <Link to="/signup">
             <span className="highlighted-link">Sign up</span>

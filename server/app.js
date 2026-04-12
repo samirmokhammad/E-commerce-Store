@@ -27,7 +27,7 @@ const frontendUrl = normalizeBaseUrl(
 );
 const backendUrl = normalizeBaseUrl(
   process.env.VITE_BACKEND_URL,
-  'http://localhost:5432',
+  'http://localhost:4000',
 );
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -84,9 +84,9 @@ app.get('/api/user', ensureAuthenticated, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(response.rows[0]);
+    return res.json(response.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -130,6 +130,112 @@ app.post('/api/signup', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+app.post('/api/login', async (req, res) => {
+  const { login, password } = req.body;
+
+  if (!password || !login) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  try {
+    const response = await pool.query(
+      'SELECT * FROM customer WHERE email = $1 OR username = $1',
+      [login],
+    );
+
+    if (response.rowCount === 0) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const user = response.rows[0];
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    req.login(user, (err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Login failed' });
+      }
+      return res.json({ message: 'Logged in successfully' });
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.put('/api/user', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { username, email } = req.body;
+
+  if (!username || !email) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  try {
+    const existingUser = await pool.query(
+      'SELECT id FROM customer WHERE (email = $1 OR username = $2) AND id != $3',
+      [email, username, userId],
+    );
+    if (existingUser.rowCount > 0) {
+      return res
+        .status(409)
+        .json({ message: 'Email or username already in use' });
+    }
+    const response = await pool.query(
+      'UPDATE customer SET username = $1, email = $2 WHERE id = $3 RETURNING id, username, email',
+      [username, email, userId],
+    );
+    return res.json(response.rows[0]);
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.put('/api/user/password', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  try {
+    const oldPassword = await pool.query(
+      'SELECT password FROM customer WHERE id = $1',
+      [userId],
+    );
+
+    if (oldPassword.rowCount === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = oldPassword.rows[0];
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const response = await pool.query(
+      'UPDATE customer SET password = $1 WHERE id = $2 RETURNING id, username, email',
+      [hashedPassword, userId],
+    );
+    return res.json(response.rows[0]);
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.get('/api/logout', (req, res, next) => {
+  req.logout(function (err) {
+    if (err) return next(err);
+    return res.sendStatus(204);
+  });
 });
 
 function ensureAuthenticated(req, res, next) {

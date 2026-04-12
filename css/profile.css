@@ -1,0 +1,19 @@
+.profile-block h3 {
+  text-align: center;
+  margin-block-end: 10px;
+}
+
+.profile-block p {
+  text-align: center;
+  margin-block-end: 20px;
+}
+
+.profile-btns {
+  margin-inline-end: 10px;
+}
+
+.profile-btns-block {
+  margin: auto;
+  width: fit-content;
+  margin-block-end: 20px;
+}

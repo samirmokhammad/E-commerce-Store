@@ -1,6 +1,4 @@
 .signup-block h2 {
-  text-align: center;
-  margin-block: 20px 40px;
 }
 
 .signup-block > p {
@@ -11,45 +9,13 @@
 
 .signup-block label,
 input {
-  display: block;
 }
 
 .signup-block label {
-  margin-bottom: 10px;
-  text-align: center;
 }
 
 .signup-block input {
-  width: 30%;
-  margin: auto;
-  padding: 7px 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .signup-block button {
-  display: block;
-  margin-inline: auto;
-  padding: 10px 25px;
-  border: none;
-  outline: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-block-end: 20px;
-}
-
-.warning-text {
-  color: red;
-  text-align: center;
-  width: fit-content;
-  margin-inline: auto;
-  font-size: 0.9rem;
-  margin-block-end: 10px;
-}
-
-@media (max-width: 750px) {
-  .signup-block input {
-    width: 80%;
-  }
 }
