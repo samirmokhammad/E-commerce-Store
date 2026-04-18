@@ -6,6 +6,7 @@ import SignUp from './components/SignUp';
 import LogIn from './components/LogIn';
 import Store from './components/Store';
 import Profile from './components/Profile';
+import Cart from './components/Cart';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="login" element={<LogIn />} />\
         <Route path="store" element={<Store />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="cart" element={<Cart />} />
       </Route>
     </Routes>
   </BrowserRouter>,

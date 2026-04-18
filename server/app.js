@@ -231,6 +231,86 @@ app.put('/api/user/password', ensureAuthenticated, async (req, res) => {
   }
 });
 
+app.get('/api/products', async (req, res) => {
+  const { category } = req.query;
+
+  if (category === 'all') {
+    try {
+      const response = await pool.query('SELECT * FROM product');
+      return res.json(response.rows);
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  try {
+    const response = await pool.query(
+      'SELECT * FROM product WHERE category = $1',
+      [category],
+    );
+    return res.json(response.rows);
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post('/api/cart', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { productId } = req.body;
+
+  if (!productId) {
+    return res.status(400).json({ message: 'Missing productId' });
+  }
+
+  try {
+    const cartId = await pool.query(
+      'SELECT id FROM cart WHERE customer_id = $1',
+      [userId],
+    );
+
+    const cartItems = await pool.query(
+      'SELECT productid FROM cartitem WHERE cartid = $1',
+      [cartId.rows[0].id],
+    );
+
+    if (cartItems.rows.some((item) => item.productid === productId)) {
+      await pool.query(
+        'UPDATE cartitem SET quantity = quantity + 1 WHERE cartid = $1 AND productid = $2',
+        [cartId.rows[0].id, productId],
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO cartitem (cartid, productid, quantity) VALUES ($1, $2, $3)',
+        [cartId.rows[0].id, productId, 1],
+      );
+    }
+    return res.status(201).json({ message: 'Product added to cart' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.get('/api/cart', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const cartId = await pool.query(
+      'SELECT id FROM cart WHERE customer_id = $1',
+      [userId],
+    );
+    const cartItems = await pool.query(
+      `SELECT p.id, p.name, p.price, p.description, p.image_name, ci.quantity
+       FROM cartitem ci
+       JOIN product p ON ci.productid = p.id
+       WHERE ci.cartid = $1`,
+      [cartId.rows[0].id],
+    );
+    return res.json(cartItems.rows);
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 app.get('/api/logout', (req, res, next) => {
   req.logout(function (err) {
     if (err) return next(err);

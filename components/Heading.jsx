@@ -46,6 +46,37 @@ export default function Heading() {
     }
   };
 
+  if (
+    location.pathname === '/profile' ||
+    location.pathname === '/cart' ||
+    location.pathname === '/confirmation'
+  ) {
+    return (
+      <header>
+        <h1 className="visually-hidden">Heading</h1>
+        <Link to="/store">
+          <h2>E-Commerce Store</h2>
+        </Link>
+        <div className="links">
+          {isLoggedIn ? (
+            <>
+              <Link to="/store">Store</Link>
+              <Link to="/cart">Cart</Link>
+              <Link onClick={logOut}>Log Out</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/store">Store</Link>
+
+              <Link to="/signup">Sign Up</Link>
+              <Link to="/login">Log In</Link>
+            </>
+          )}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header>
       <h1 className="visually-hidden">Heading</h1>
@@ -55,12 +86,15 @@ export default function Heading() {
       <div className="links">
         {isLoggedIn ? (
           <>
+            <Link to="/store">Store</Link>
             <Link to="/cart">Cart</Link>
             <Link to="/profile">Profile</Link>
             <Link onClick={logOut}>Log Out</Link>
           </>
         ) : (
           <>
+            <Link to="/store">Store</Link>
+
             <Link to="/signup">Sign Up</Link>
             <Link to="/login">Log In</Link>
           </>
