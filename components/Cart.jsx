@@ -85,7 +85,6 @@ export default function Cart() {
                     placeholder={item.quantity}
                     className="quantity-input"
                     onBlur={}
-                    loremipsdum
                   />
                   <img
                     src="../img/plus-icon.svg"
