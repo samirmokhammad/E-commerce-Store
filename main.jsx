@@ -7,6 +7,7 @@ import LogIn from './components/LogIn';
 import Store from './components/Store';
 import Profile from './components/Profile';
 import Cart from './components/Cart';
+import Confirmation from './components/Confirmation';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="store" element={<Store />} />
         <Route path="profile" element={<Profile />} />
         <Route path="cart" element={<Cart />} />
+        <Route path="confirmation" element={<Confirmation />} />
       </Route>
     </Routes>
   </BrowserRouter>,

@@ -254,6 +254,27 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+app.get('/api/cart', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const cartId = await pool.query(
+      'SELECT id FROM cart WHERE customer_id = $1',
+      [userId],
+    );
+    const cartItems = await pool.query(
+      `SELECT p.id, p.name, p.price, p.description, p.image_name, ci.quantity, ci.productid
+       FROM cartitem ci
+       JOIN product p ON ci.productid = p.id
+       WHERE ci.cartid = $1`,
+      [cartId.rows[0].id],
+    );
+    return res.json(cartItems.rows);
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 app.post('/api/cart', ensureAuthenticated, async (req, res) => {
   const userId = req.user.id;
   const { productId } = req.body;
@@ -290,23 +311,141 @@ app.post('/api/cart', ensureAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/api/cart', ensureAuthenticated, async (req, res) => {
+app.delete('/api/cart', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { productId } = req.body;
+
+  if (!productId) {
+    return res.status(400).json({ message: 'Missing productId' });
+  }
+
+  try {
+    const cartId = await pool.query(
+      'SELECT id from cart WHERE customer_id = $1',
+      [userId],
+    );
+
+    if (cartId.rows.length === 0) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    await pool.query(
+      'DELETE FROM cartitem WHERE cartid = $1 AND productid = $2',
+      [cartId.rows[0].id, productId],
+    );
+
+    return res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.put('/api/cart', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { numberParsed, method, productId } = req.body;
+
+  if (!productId || !method || !numberParsed) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  try {
+    const cartId = await pool.query(
+      'SELECT id from cart WHERE customer_id = $1',
+      [userId],
+    );
+
+    if (cartId.rows.length === 0) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    if (method === 'set') {
+      await pool.query(
+        'UPDATE cartitem SET quantity = $1 WHERE cartid = $2 AND productid = $3',
+        [numberParsed, cartId.rows[0].id, productId],
+      );
+    } else if (method === 'increment') {
+      await pool.query(
+        'UPDATE cartitem SET quantity = quantity + $1 WHERE cartid = $2 AND productid = $3',
+        [numberParsed, cartId.rows[0].id, productId],
+      );
+    } else if (method === 'decrement') {
+      await pool.query(
+        'UPDATE cartitem SET quantity = quantity - $1 WHERE cartid = $2 AND productid = $3',
+        [numberParsed, cartId.rows[0].id, productId],
+      );
+    }
+
+    return res
+      .status(200)
+      .json({ message: 'Product quantity updated successfully' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.get('/api/order', ensureAuthenticated, async (req, res) => {
   const userId = req.user.id;
 
   try {
+    const orderId = await pool.query(
+      'SELECT id FROM "order" WHERE customerid = $1 ORDER BY orderdate desc LIMIT 1',
+      [userId],
+    );
+    if (orderId.rows.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const orderItems = await pool.query(
+      `SELECT oi.id, oi.productid, oi.quantity, oi.price, p.name, p.description, p.image_name
+       FROM orderitem oi
+       JOIN product p ON oi.productid = p.id
+       WHERE oi.orderid = $1`,
+      [orderId.rows[0].id],
+    );
+    return res.status(200).json({ orderItems: orderItems.rows });
+  } catch (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post('/api/order', ensureAuthenticated, async (req, res) => {
+  const userId = req.user.id;
+  const { items, totalAmount } = req.body;
+
+  if (!items || !Array.isArray(items) || items.length === 0 || !totalAmount) {
+    return res.status(400).json({ message: 'Invalid order data' });
+  }
+
+  try {
+    const createOrder = await pool.query(
+      'INSERT INTO "order" (customerid, orderdate, totalamount) VALUES ($1, NOW(), $2) RETURNING id',
+      [userId, totalAmount],
+    );
+
+    const orderId = createOrder.rows[0].id;
+
+    for (const item of items) {
+      await pool.query(
+        'INSERT INTO orderitem (orderid, productid, quantity, price) VALUES ($1, $2, $3, $4)',
+        [orderId, item.productId, item.quantity, item.price],
+      );
+    }
+
     const cartId = await pool.query(
       'SELECT id FROM cart WHERE customer_id = $1',
       [userId],
     );
-    const cartItems = await pool.query(
-      `SELECT p.id, p.name, p.price, p.description, p.image_name, ci.quantity
-       FROM cartitem ci
-       JOIN product p ON ci.productid = p.id
-       WHERE ci.cartid = $1`,
-      [cartId.rows[0].id],
-    );
-    return res.json(cartItems.rows);
+    if (cartId.rows.length > 0) {
+      await pool.query('DELETE FROM cartitem WHERE cartid = $1', [
+        cartId.rows[0].id,
+      ]);
+    }
+
+    return res
+      .status(201)
+      .json({ message: 'Order placed successfully', orderId });
   } catch (err) {
+    console.error('Order creation error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
